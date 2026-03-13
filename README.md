@@ -56,36 +56,94 @@ Docker_Labs/
         └── virginica.jpeg
 ```
 
-## Running with Docker (single image)
+## Prerequisites
 
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- Verify Docker is running: `docker info`
+
+## How to Run
+
+### Option 1 — Single Docker image (recommended)
+
+This uses a multi-stage Dockerfile: stage 1 trains the model, stage 2 serves it.
+
+**Step 1: Clone the repo**
 ```bash
-# Build the multi-stage image (stage 1 trains, stage 2 serves)
-docker build -t iris-rf-app .
+git clone https://github.com/bkiritom8/docker-iris-classifier.git
+cd docker-iris-classifier
+```
 
-# Run the serving container
+**Step 2: Build the image**
+```bash
+docker build -t iris-rf-app .
+```
+
+**Step 3: Run the container**
+```bash
 docker run -p 4000:4000 iris-rf-app
 ```
 
-Open your browser at `http://localhost:4000/predict`.
+**Step 4: Open the web UI**
 
-## Running with Docker Compose
+Go to `http://localhost:4000/predict` in your browser, enter the flower measurements, and click **ANALYZE**.
 
+To stop the container: `Ctrl+C`
+
+---
+
+### Option 2 — Docker Compose
+
+Runs training and serving as separate containers with a shared volume.
+
+**Step 1: Clone the repo**
+```bash
+git clone https://github.com/bkiritom8/docker-iris-classifier.git
+cd docker-iris-classifier
+```
+
+**Step 2: Start all services**
 ```bash
 docker compose up
 ```
 
-This spins up two services:
+This spins up two services in order:
 1. **model-training** — trains the Random Forest and writes `my_model.pkl` to the shared `model_exchange` volume
-2. **serving** — waits for training to complete, then loads the model and starts the Flask API on port 4000
+2. **serving** — waits for training to finish, then starts the Flask API on port 4000
 
-## API
+**Step 3: Open the web UI**
+
+Go to `http://localhost:4000/predict`
+
+To stop: `Ctrl+C`, then `docker compose down`
+
+---
+
+### Option 3 — Test via curl (no browser needed)
+
+```bash
+curl -X POST http://localhost:4000/predict \
+  -d "sepal_length=5.1&sepal_width=3.5&petal_length=1.4&petal_width=0.2"
+```
+
+**Sample values for each class:**
+
+| Class | sepal_length | sepal_width | petal_length | petal_width |
+|---|---|---|---|---|
+| Setosa | 5.1 | 3.5 | 1.4 | 0.2 |
+| Versicolor | 6.0 | 2.7 | 5.1 | 1.6 |
+| Virginica | 6.3 | 3.3 | 6.0 | 2.5 |
+
+**Expected response:**
+```json
+{"predicted_class": "Setosa"}
+```
+
+## API Reference
 
 ### `GET /predict`
 Returns the prediction web UI.
 
 ### `POST /predict`
-
-**Form fields:**
 
 | Field | Type | Example |
 |---|---|---|
